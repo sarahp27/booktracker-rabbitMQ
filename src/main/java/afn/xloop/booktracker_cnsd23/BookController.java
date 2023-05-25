@@ -1,46 +1,39 @@
 package afn.xloop.booktracker_cnsd23;
 
-import java.util.Collection;
-
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.scheduling.annotation.Scheduled;
 
 @RestController
-@RequestMapping("/books")
+@RequestMapping("/insertBook")
+
 public class BookController {
-    private final BookRepository repo;
 
-    public BookController(BookRepository repo){
-        this.repo = repo;
+    @Autowired
+    private BookRepository repository;
+    
+    @Autowired
+    private RabbitTemplate rabbitTemp;
+
+    @Autowired
+    private Queue queue;
+
+    @Scheduled(fixedDelay = 1000, initialDelay = 500)
+    public void sendMessage(){
+        String message = "Book Saved!";
+        this.rabbitTemp.convertAndSend(queue.getName(), message);
+        System.out.println("Sent:'" +message+ "'");
     }
 
-    //localhost:8080/books
-    @PostMapping("")
-    public String createBook(@RequestBody Book book){
-        this.repo.save(book);
-        return book.getTitle() + " Book is added in book list " ;
-        
+    @PostMapping("/post")
+    public void saveBook(@RequestBody Book book)
+    {
+        sendMessage();
+        repository.saveBook(book);
     }
-
-    @GetMapping("/all")
-    public Collection<Book> getAllBooks(){
-        return this.repo.getAllBook();
-    }
-
-    @DeleteMapping("/delete/{id}")
-    public  String  deleteBook(@RequestBody Book book){
-           this.repo.delete(book);
-            return book.getTitle() + " Book is deleted from booklist " ;
-    }
-    @PutMapping("update/{id}")
-    public String updateBook(@RequestBody Book book ){
-         this.repo.Update(book);
-     
-         return book.getTitle() +" Book  is Updated in booklist "  ;
-        }
 }

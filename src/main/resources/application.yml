@@ -1,0 +1,13 @@
+spring:
+    profiles:
+        active: book-tracker
+
+
+logging:
+    level:
+        org: ERROR
+
+
+book:
+    client: 
+        duration: 20000
